@@ -69,7 +69,15 @@ export class Mixer extends Readable {
                     let inputBuffer = this.args.channels === 1 ? input.readMono(samples) : input.readStereo(samples);
 
                     for (let i = 0; i < samples * this.args.channels; i++) {
-                        let sample = this.readSample.call(mixedBuffer, i * this.sampleByteLength) + Math.floor(this.readSample.call(inputBuffer, i * this.sampleByteLength) / this.inputs.length);
+                        let sample = this.readSample.call(mixedBuffer, i * this.sampleByteLength) + Math.floor(this.readSample.call(inputBuffer, i * this.sampleByteLength));
+                        // Soft clipping
+                        if (sample/32768 <= -1) {
+                            sample = -21845
+                        } else if(sample/32767 >= 1) {
+                            sample = 21845
+                        } else {
+                            sample = 32768 * (sample/32768 - Math.pow(sample/32768, 3) / 3);
+                        }
                         this.writeSample.call(mixedBuffer, sample, i * this.sampleByteLength);
                     }
                 }
